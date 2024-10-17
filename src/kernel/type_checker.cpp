@@ -416,6 +416,21 @@ static bool is_let_fvar(local_ctx const & lctx, expr const & e) {
     }
 }
 
+extern "C" obj_res lean_rewriting_reduce(obj_arg whnf, obj_arg env, obj_arg expr);
+
+static optional<expr> rewriting_reduce(type_checker * checker, environment const & env, expr const & e) {
+    object * checker_obj = alloc_cnstr(0, 0, sizeof(usize));
+    cnstr_set_usize(checker_obj, 0, reinterpret_cast<usize>(checker));
+    object * whnf_obj = alloc_closure([](obj_arg checker_obj, obj_arg e) {
+        auto checker = reinterpret_cast<type_checker *>(cnstr_get_usize(checker_obj, 0));
+        dec_ref(checker_obj);
+        expr expr(e);
+        return checker->whnf(expr).steal();
+    }, 1);
+    closure_set(whnf_obj, 0, checker_obj);
+    return to_optional<expr>(lean_rewriting_reduce(whnf_obj, env.to_obj_arg(), e.to_obj_arg()));
+}
+
 /** \brief Weak head normal form core procedure. It does not perform delta reduction nor normalization extensions.
     If `cheap == true`, then we don't perform delta-reduction when reducing major premise of recursors and projections.
     We also do not cache results. */
@@ -483,6 +498,8 @@ expr type_checker::whnf_core(expr const & e, bool cheap_rec, bool cheap_proj) {
                         m_diag->record_unfold(const_name(f));
                 }
                 /* iota-reduction and quotient reduction rules */
+                return whnf_core(*r, cheap_rec, cheap_proj);
+            } else if (auto r = rewriting_reduce(this, env(), e)) {
                 return whnf_core(*r, cheap_rec, cheap_proj);
             } else {
                 return e;

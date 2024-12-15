@@ -22,6 +22,8 @@ import Lean.Compiler.IR.ElimDeadBranches
 import Lean.Compiler.IR.EmitC
 import Lean.Compiler.IR.CtorLayout
 import Lean.Compiler.IR.Sorry
+import Lean.Compiler.IR.Regalloc
+import Lean.Compiler.IR.Jit
 
 namespace Lean.IR
 

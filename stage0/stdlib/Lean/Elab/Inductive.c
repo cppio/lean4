@@ -3909,7 +3909,7 @@ _start:
 {
 uint8_t x_21; lean_object* x_22; lean_object* x_23; 
 x_21 = 1;
-x_22 = lean_alloc_ctor(0, 11, 3);
+x_22 = lean_alloc_ctor(0, 11, 2);
 lean_ctor_set(x_22, 0, x_1);
 lean_ctor_set(x_22, 1, x_2);
 lean_ctor_set(x_22, 2, x_3);
@@ -3923,7 +3923,6 @@ lean_ctor_set(x_22, 9, x_11);
 lean_ctor_set(x_22, 10, x_12);
 lean_ctor_set_uint8(x_22, sizeof(void*)*11, x_4);
 lean_ctor_set_uint8(x_22, sizeof(void*)*11 + 1, x_21);
-lean_ctor_set_uint8(x_22, sizeof(void*)*11 + 2, x_21);
 x_23 = lean_alloc_ctor(0, 2, 0);
 lean_ctor_set(x_23, 0, x_22);
 lean_ctor_set(x_23, 1, x_20);

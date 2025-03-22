@@ -60,7 +60,6 @@ private def inductiveSyntaxToView (modifiers : Modifiers) (decl : Syntax) : Term
     shortDeclName   := name
     derivingClasses := classes
     allowIndices    := true
-    allowSortPolymorphism := true
     declId, modifiers, isClass, declName, levelNames
     binders, type?, ctors
     computedFields

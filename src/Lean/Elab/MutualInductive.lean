@@ -93,9 +93,6 @@ structure InductiveView where
   isClass         : Bool
   /-- Whether the command should allow indices (like `inductive`) or not (like `structure`). -/
   allowIndices    : Bool
-  /-- Whether the command supports creating inductive types that can be polymorphic across both `Prop` and `Type _`.
-  If false, then either the universe must be `Prop` or it must be of the form `Type _`. -/
-  allowSortPolymorphism : Bool
   shortDeclName   : Name
   declName        : Name
   levelNames      : List Name
@@ -705,9 +702,6 @@ private def checkResultingUniversePolymorphism (views : Array InductiveView) (u 
         invalid universe polymorphic resulting type, the resulting universe is not 'Prop', but it may be 'Prop' for some parameter values:{indentD (mkSort u)}\n\
         Possible solution: use levels of the form 'max 1 _' or '_ + 1' to ensure the universe is of the form 'Type _'."
   unless u.isZero || u.isNeverZero do
-    for view in views do
-      if !view.allowSortPolymorphism then
-        doErrFor view
     if bootstrap.inductiveCheckResultingUniverse.get (← getOptions) then
       -- TODO: heuristic for allowing `Sort` polymorphism?
       doErrFor views[0]!

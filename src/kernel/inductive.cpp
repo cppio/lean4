@@ -120,6 +120,24 @@ optional<recursor_rule> get_rec_rule_for(recursor_val const & rec_val, expr cons
     return optional<recursor_rule>();
 }
 
+static bool solve_zero(level const & l, buffer<name> & ps) {
+    switch (l.kind()) {
+    case level_kind::Zero:
+        return true;
+    case level_kind::Succ:
+        return false;
+    case level_kind::Max:
+        return solve_zero(max_lhs(l), ps) && solve_zero(max_rhs(l), ps);
+    case level_kind::IMax:
+        return solve_zero(imax_rhs(l), ps);
+    case level_kind::Param:
+        ps.push_back(param_id(l));
+        return true;
+    case level_kind::MVar:
+        lean_unreachable();
+    }
+}
+
 /* Auxiliary class for adding a mutual inductive datatype declaration. */
 class add_inductive_fn {
     environment            m_env;
@@ -134,9 +152,6 @@ class add_inductive_fn {
     level                  m_result_level;
     /* m_lparams ==> m_levels */
     levels                 m_levels;
-    /* We track whether the resultant universe cannot be zero for any
-       universe level instantiation */
-    bool                   m_is_not_zero;
     /* A free variable for each parameter */
     buffer<expr>           m_params;
     /* A constant for each inductive type */
@@ -246,7 +261,6 @@ public:
 
             if (first) {
                 m_result_level = sort_level(type);
-                m_is_not_zero  = is_not_zero(m_result_level);
             } else if (!is_equivalent(sort_level(type), m_result_level)) {
                 throw kernel_exception(m_env, "mutually inductive types must live in the same universe");
             }
@@ -475,7 +489,8 @@ public:
 
     /** \brief Return true if recursor can only map into Prop */
     bool elim_only_at_universe_zero() {
-        if (m_is_not_zero) {
+        buffer<name> us;
+        if (!solve_zero(m_result_level, us)) {
             /* For every universe parameter assignment, the resultant universe is not 0.
                So, it is not an inductive predicate */
             return false;
@@ -508,11 +523,16 @@ public:
         expr type  = constructor_type(cnstr);
         unsigned i = 0;
         buffer<expr> to_check; /* Arguments that we must check if occur in the result type */
+        names ps = us;
+        levels ls;
+        for (unsigned idx = 0; idx < us.size(); idx++) {
+            ls = cons(mk_level_zero(), ls);
+        }
         while (is_pi(type)) {
             expr fvar = mk_local_decl_for(type);
             if (i >= m_nparams) {
                 expr s = tc().ensure_type(binding_domain(type));
-                if (!is_zero(sort_level(s))) {
+                if (!is_zero(instantiate(sort_level(s), ps, ls))) {
                     /* Current argument is not in Prop (i.e., condition 1 failed).
                        We save it in to_check to be able to try condition 2 above. */
                     to_check.push_back(fvar);
